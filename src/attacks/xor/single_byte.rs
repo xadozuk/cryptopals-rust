@@ -1,8 +1,8 @@
-use crate::lib::crypto;
+use crate::lib::crypto::xor;
 use crate::lib::byte::ByteVec;
 use std::collections::HashMap;
 
-const ENGLISH_LETTERS_FREQUENCIES: [(char, f64); 26] = [
+const ENGLISH_LETTERS_FREQUENCIES: [(char, f64); 29] = [
     ('E', 0.11132),
     ('T', 0.09356),
     ('A', 0.08497),
@@ -28,7 +28,11 @@ const ENGLISH_LETTERS_FREQUENCIES: [(char, f64); 26] = [
     ('J', 0.00153),
     ('X', 0.00150),
     ('Q', 0.00095),
-    ('Z', 0.00077)
+    ('Z', 0.00077),
+    // Add a little score to ponctuation
+    ('.', 0.00001),
+    (',', 0.00001),
+    ('\n', 0.00001),
 ];
 
 fn frequency_analysis(string: &String) -> HashMap::<char, f64>
@@ -69,7 +73,7 @@ fn frequency_score(bytes: &ByteVec) -> f64
     return freq_english_score(&freqs);
 }
 
-pub fn decrypt(ciphertext: &ByteVec) -> (u8, ByteVec)
+pub fn decrypt(ciphertext: &ByteVec) -> (u8, ByteVec, f64)
 {
     let mut output = Vec::<(u8, ByteVec, f64)>::new();
 
@@ -80,16 +84,23 @@ pub fn decrypt(ciphertext: &ByteVec) -> (u8, ByteVec)
             &format!("{:0>2x}", i).repeat(ciphertext.len())
         );
 
-        let decrypted = crypto::fixed_xor(&ciphertext, &key);
-        let score = frequency_score(&decrypted);
+        let decrypted = xor::fixed(&ciphertext, &key);
+        let score = frequency_score(&decrypted);        
 
         output.push((i, decrypted, score));
     }
 
     output.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap());
 
+    /*
+    for kv in &output
+    {
+        println!("{:0>2x} {} ({})", kv.0, kv.1.to_string().unwrap_or(String::from("...")), kv.2);
+    }
+    */
+
     let first_result = output.remove(0);
-    return (first_result.0, first_result.1);
+    return (first_result.0, first_result.1, first_result.2);
 }
 
 #[cfg(test)]

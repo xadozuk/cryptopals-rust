@@ -8,6 +8,8 @@ pub struct ByteVec
     bytes: Vec<u8>
 }
 
+
+
 impl From<&str> for ByteVec
 {
     fn from(string: &str) -> Self
