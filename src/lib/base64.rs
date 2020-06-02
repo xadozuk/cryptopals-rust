@@ -1,9 +1,11 @@
 use crate::lib::byte::ByteVec;
 
-static BASE64_TABLE: &[u8] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".as_bytes();
+const BASE64_DECODING_TABLE: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static BASE64_ENCODING_TABLE: &[u8] = BASE64_DECODING_TABLE.as_bytes();
 
-trait Base64
+pub trait Base64
 {
+    fn from_base64(string: &str) -> Self;
     fn to_base64(self) -> String;
 }
 
@@ -30,7 +32,7 @@ impl Base64 for ByteVec
 
             for b64_idx in sextets.iter()
             {
-                output.push(BASE64_TABLE[*b64_idx as usize] as char);
+                output.push(BASE64_ENCODING_TABLE[*b64_idx as usize] as char);
             }
         }
 
@@ -45,7 +47,7 @@ impl Base64 for ByteVec
 
             for b64_idx in sextets.iter()
             {
-                output.push(BASE64_TABLE[*b64_idx as usize] as char);
+                output.push(BASE64_ENCODING_TABLE[*b64_idx as usize] as char);
             }
         }
         // 1-octet into 2-sextet (with 4bit zero-padding)
@@ -58,7 +60,7 @@ impl Base64 for ByteVec
 
             for b64_idx in sextets.iter()
             {
-                output.push(BASE64_TABLE[*b64_idx as usize] as char);
+                output.push(BASE64_ENCODING_TABLE[*b64_idx as usize] as char);
             }
         }
 
@@ -66,6 +68,65 @@ impl Base64 for ByteVec
 
         output
     }
+
+    fn from_base64(string: &str) -> Self
+    {
+        // Strip space and line return
+        let string = string.replace(" ", "").replace("\n", "");
+
+        if string.len() % 4 != 0 { panic!("Malformed base64 string."); }
+
+        let mut result = ByteVec::new();
+
+        for i in (0..string.len()).step_by(4)
+        {
+            let sextets = chars_to_sextets(&string[i..i + 4]);
+
+            let bytes: Vec<u8> = match sextets.len()
+            {
+                2 => 
+                {
+                    vec![
+                        sextets[0] << 2 | sextets[1] >> 4,
+                    ]
+                },
+                3 =>
+                {
+                    vec![
+                        sextets[0] << 2 | sextets[1] >> 4,
+                        (sextets[1] & 0xF) << 4 | sextets[2] >> 2,
+                    ]
+                },
+                _ => 
+                {
+                    vec![
+                        sextets[0] << 2 | sextets[1] >> 4,
+                        (sextets[1] & 0xF) << 4 | sextets[2] >> 2,
+                        (sextets[2] & 0x3) << 6 | sextets[3]
+                    ]
+                }
+            };
+
+            for b in bytes { result.push(b); }
+        }
+
+        return result;
+    }
+}
+
+fn chars_to_sextets(string: &str) -> Vec<u8>
+{
+    let mut sextets = vec![];
+
+    for c in string.chars()
+    {
+        if let Some(idx) = BASE64_DECODING_TABLE.chars().position( |b64_c| b64_c == c )
+        {
+            sextets.push(idx as u8);
+        }
+    }
+
+    return sextets;
 }
 
 #[cfg(test)]
@@ -84,6 +145,24 @@ mod tests
         for kv in data.iter()
         {
             assert_eq!(kv.1, ByteVec::from(kv.0).to_base64())
+        }
+    }
+
+    #[test]
+    fn from_base64()
+    {
+        let data = [
+            ("Test", "VGVzdA=="),
+            ("I'm killing your brain like a poisonous mushroom", "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t"),
+            ("Lorem ipsum", "TG9yZW0g\naXBzdW0=")
+        ];
+
+        for kv in data.iter()
+        {
+            assert_eq!(
+                kv.0, 
+                ByteVec::from_base64(kv.1).to_string().unwrap()
+            )
         }
     }
 }

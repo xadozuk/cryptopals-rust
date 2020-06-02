@@ -1,3 +1,4 @@
+use std::ops::Range;
 use std::string::FromUtf8Error;
 use std::ops::Index;
 
@@ -7,8 +8,6 @@ pub struct ByteVec
 {
     bytes: Vec<u8>
 }
-
-
 
 impl From<&str> for ByteVec
 {
@@ -77,12 +76,41 @@ impl ByteVec
         self.bytes.push(value);
     }
 
+    pub fn slice(&self, index: Range<usize>) -> ByteVec
+    {
+        ByteVec { bytes: self.bytes[index].to_vec() }
+    }
+
     pub fn to_hex(&self) -> String
     {
         self.bytes
             .iter()
             .map( |b| format!("{:0>2x}", b) )
             .collect()
+    }
+
+    pub fn bits(&self) -> Vec<u8>
+    {
+        let mut bits: Vec<u8> = vec![];
+
+        for byte in &self.bytes
+        {
+            bits.push((byte & 0b10000000) >> 7);
+            bits.push((byte & 0b01000000) >> 6);
+            bits.push((byte & 0b00100000) >> 5);
+            bits.push((byte & 0b00010000) >> 4);
+            bits.push((byte & 0b00001000) >> 3);
+            bits.push((byte & 0b00000100) >> 2);
+            bits.push((byte & 0b00000010) >> 1);
+            bits.push( byte & 0b00000001);
+        }
+
+        return bits;
+    }
+
+    pub fn get(&self, index: usize) -> Option<&u8>
+    {
+        self.bytes.get(index)
     }
 
     pub fn to_string(&self) -> Result<String, FromUtf8Error>
@@ -112,5 +140,19 @@ mod tests
         let actual: Vec<u8> = bytes.into();
 
         assert_eq!(vec![0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef], actual);
+    }
+
+    #[test]
+    fn bits()
+    {
+        assert_eq!(
+            vec![1, 1, 1, 1, 1, 1, 1, 1],
+            ByteVec::from_hex("ff").bits()
+        );
+
+        assert_eq!(
+            vec![0, 0, 0, 1, 0, 0, 0, 0],
+            ByteVec::from_hex("10").bits()
+        );
     }
 }

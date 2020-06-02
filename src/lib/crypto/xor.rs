@@ -15,16 +15,16 @@ pub fn fixed(bytes1: &ByteVec, bytes2: &ByteVec) -> ByteVec
     return result;
 }
 
-pub fn repeating_key(plaintext: &ByteVec, key: &ByteVec) -> ByteVec
+pub fn repeating_key(text: &ByteVec, key: &ByteVec) -> ByteVec
 {
     if key.len() == 0 { panic!("Key must not by empty"); }
 
     let mut result = ByteVec::new();
 
-    for i in 0..plaintext.len()
+    for i in 0..text.len()
     {
         result.push(
-            plaintext[i] ^ key[i % key.len()]
+            text[i] ^ key[i % key.len()]
         );
     }
 

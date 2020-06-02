@@ -8,6 +8,7 @@ mod attacks;
 fn main()
 {
     //challenges::challenge3();
-    challenges::challenge4();
+    //challenges::challenge4();
+    challenges::challenge6();
 }
 
