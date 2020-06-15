@@ -4,8 +4,8 @@ use std::fs;
 use std::fs::File;
 use std::io::{self, BufRead};
 
-use lib::byte::ByteVec;
-use crate::lib::base64::Base64;
+use lib::types::ByteVec;
+use lib::traits::{FromHex, ToString, FromBase64, ToHex};
 
 pub fn challenge3()
 {

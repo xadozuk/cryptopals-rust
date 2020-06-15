@@ -1,23 +1,9 @@
-use crate::lib::traits::{FromHex, Bitable};
+pub mod base64;
+
+use std::string::FromUtf8Error;
+use crate::lib::traits::{FromHex, Bitable, ToString, ToHex};
 
 pub type ByteVec = Vec<u8>;
-
-impl FromHex for ByteVec
-{
-    fn from_hex(string: &str) -> Self
-    {
-        // TODO: use Result
-        if string.len() % 2 != 0
-        {
-            panic!("Invalid hex string (split byte)");
-        }
-
-        (0..string.len())
-            .step_by(2)
-            .map( |i| u8::from_str_radix(&string[i..i + 2], 16).unwrap() )
-            .collect()
-    }
-}
 
 impl Bitable for ByteVec
 {
@@ -38,6 +24,41 @@ impl Bitable for ByteVec
         }
 
         return bits;
+    }
+}
+
+impl FromHex for ByteVec
+{
+    fn from_hex(string: &str) -> Self
+    {
+        // TODO: use Result
+        if string.len() % 2 != 0
+        {
+            panic!("Invalid hex string (split byte)");
+        }
+
+        (0..string.len())
+            .step_by(2)
+            .map( |i| u8::from_str_radix(&string[i..i + 2], 16).unwrap() )
+            .collect()
+    }
+}
+
+impl ToHex for ByteVec
+{
+    fn to_hex(&self) -> String
+    {
+        self.iter()
+            .map( |b| format!("{:0>2x}", b) )
+            .collect()
+    }
+}
+
+impl ToString for ByteVec
+{
+    fn to_string(&self) -> Result<String, FromUtf8Error>
+    { 
+        String::from_utf8(self.clone())
     }
 }
 

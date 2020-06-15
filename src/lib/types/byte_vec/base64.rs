@@ -1,17 +1,59 @@
-use crate::lib::byte::ByteVec;
+use super::ByteVec;
+use crate::lib::traits::{FromBase64, ToBase64, ToString};
 
 const BASE64_DECODING_TABLE: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static BASE64_ENCODING_TABLE: &[u8] = BASE64_DECODING_TABLE.as_bytes();
 
-pub trait Base64
+impl FromBase64 for ByteVec
 {
-    fn from_base64(string: &str) -> Self;
-    fn to_base64(self) -> String;
+    fn from_base64(string: &str) -> Self
+    {
+        // Strip space and line return
+        let string = string.replace(" ", "").replace("\n", "");
+
+        if string.len() % 4 != 0 { panic!("Malformed base64 string."); }
+
+        let mut result = ByteVec::new();
+
+        for i in (0..string.len()).step_by(4)
+        {
+            let sextets = chars_to_sextets(&string[i..i + 4]);
+
+            let bytes: Vec<u8> = match sextets.len()
+            {
+                2 => 
+                {
+                    vec![
+                        sextets[0] << 2 | sextets[1] >> 4,
+                    ]
+                },
+                3 =>
+                {
+                    vec![
+                        sextets[0] << 2 | sextets[1] >> 4,
+                        (sextets[1] & 0xF) << 4 | sextets[2] >> 2,
+                    ]
+                },
+                _ => 
+                {
+                    vec![
+                        sextets[0] << 2 | sextets[1] >> 4,
+                        (sextets[1] & 0xF) << 4 | sextets[2] >> 2,
+                        (sextets[2] & 0x3) << 6 | sextets[3]
+                    ]
+                }
+            };
+
+            for b in bytes { result.push(b); }
+        }
+
+        return result;
+    }
 }
 
-impl Base64 for ByteVec
+impl ToBase64 for ByteVec
 {
-    fn to_base64(self) -> String 
+    fn to_base64(&self) -> String 
     {
         let n_bits  = self.len() * 8;
         // Shift can be 2, 4 or 6 (aka 0)
@@ -67,50 +109,6 @@ impl Base64 for ByteVec
         output.push_str(&"=".repeat(padding));
 
         output
-    }
-
-    fn from_base64(string: &str) -> Self
-    {
-        // Strip space and line return
-        let string = string.replace(" ", "").replace("\n", "");
-
-        if string.len() % 4 != 0 { panic!("Malformed base64 string."); }
-
-        let mut result = ByteVec::new();
-
-        for i in (0..string.len()).step_by(4)
-        {
-            let sextets = chars_to_sextets(&string[i..i + 4]);
-
-            let bytes: Vec<u8> = match sextets.len()
-            {
-                2 => 
-                {
-                    vec![
-                        sextets[0] << 2 | sextets[1] >> 4,
-                    ]
-                },
-                3 =>
-                {
-                    vec![
-                        sextets[0] << 2 | sextets[1] >> 4,
-                        (sextets[1] & 0xF) << 4 | sextets[2] >> 2,
-                    ]
-                },
-                _ => 
-                {
-                    vec![
-                        sextets[0] << 2 | sextets[1] >> 4,
-                        (sextets[1] & 0xF) << 4 | sextets[2] >> 2,
-                        (sextets[2] & 0x3) << 6 | sextets[3]
-                    ]
-                }
-            };
-
-            for b in bytes { result.push(b); }
-        }
-
-        return result;
     }
 }
 

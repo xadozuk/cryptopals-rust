@@ -1,40 +1,28 @@
-use crate::lib::byte::ByteVec;
+use crate::lib::types::ByteVec;
+use crate::lib::math::byte::xor;
 
-pub fn fixed(bytes1: &ByteVec, bytes2: &ByteVec) -> ByteVec
+pub fn fixed(a: &ByteVec, b: &ByteVec) -> ByteVec
 {
-    if bytes1.len() != bytes2.len() { panic!("ByteVec must be of the same length ({}|{})", bytes1.len(), bytes2.len()) }
-
-    let mut result = ByteVec::new();
-
-    for i in 0..bytes1.len()
-    {
-        let xored_value = bytes1[i] ^ bytes2[i];
-        result.push(xored_value);
-    }
-
-    return result;
+    xor(a, b)
 }
 
 pub fn repeating_key(text: &ByteVec, key: &ByteVec) -> ByteVec
 {
     if key.len() == 0 { panic!("Key must not by empty"); }
 
-    let mut result = ByteVec::new();
+    let expanded_key: ByteVec = (0..text.len())
+        .map( |i| key[i % key.len()] )
+        .collect();
 
-    for i in 0..text.len()
-    {
-        result.push(
-            text[i] ^ key[i % key.len()]
-        );
-    }
 
-    return result;
+    fixed(text, &expanded_key)
 }
 
 #[cfg(test)]
 mod tests
 {
     use super::*;
+    use crate::lib::traits::FromHex;
 
     #[test]
     fn fixed()

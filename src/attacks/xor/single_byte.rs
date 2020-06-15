@@ -1,5 +1,7 @@
 use crate::lib::crypto::xor;
-use crate::lib::byte::ByteVec;
+use crate::lib::types::ByteVec;
+use crate::lib::traits::{FromHex, ToString};
+
 use std::collections::HashMap;
 
 const ENGLISH_LETTERS_FREQUENCIES: [(char, f64); 30] = [

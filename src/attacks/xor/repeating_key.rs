@@ -2,9 +2,11 @@ use std::collections::HashMap;
 use std::cmp::min;
 
 use crate::lib::num;
-use crate::lib::byte::ByteVec;
+use crate::lib::types::ByteVec;
 use crate::lib::crypto::xor::repeating_key;
 use crate::attacks::xor::single_byte::frequency_score;
+
+use crate::lib::traits::{Bitable, ToString, ToHex};
 
 const MAX_KEY_SIZE: usize = 40;
 const KEY_BLOCKS: usize = 4;
@@ -47,8 +49,8 @@ fn score_distance(ciphertext: &ByteVec) -> Vec<(usize, f64)>
                 continue;
             }
 
-            let a_block = ciphertext.slice(n_block*key_size..(n_block+1)*key_size);
-            let b_block = ciphertext.slice((n_block+1)*key_size..(n_block+2)*key_size);
+            let a_block = &ciphertext[n_block*key_size..(n_block+1)*key_size].to_vec();
+            let b_block = &ciphertext[(n_block+1)*key_size..(n_block+2)*key_size].to_vec();
 
             let dist = hamming_distance(&a_block, &b_block);
 
@@ -123,7 +125,7 @@ fn slice_block(ciphertext: &ByteVec, block_size: usize) -> Vec<ByteVec>
 
     for i in (0..ciphertext.len()).step_by(block_size)
     {
-        result.push(ciphertext.slice(i..min(i+block_size, ciphertext.len())));
+        result.push(ciphertext[i..min(i+block_size, ciphertext.len())].to_vec());
     }
 
     return result;
@@ -227,7 +229,8 @@ pub fn decrypt(ciphertext: &ByteVec) -> (ByteVec, ByteVec)
 #[cfg(test)]
 mod tests
 {
-    use crate::lib::byte::ByteVec;
+    use crate::lib::types::ByteVec;
+    use crate::lib::traits::FromHex;
 
     #[test]
     fn hamming_distance()
