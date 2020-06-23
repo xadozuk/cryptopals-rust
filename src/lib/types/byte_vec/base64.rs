@@ -11,7 +11,7 @@ impl FromBase64 for ByteVec
         // Strip space and line return
         let string = string.replace(" ", "").replace("\n", "");
 
-        if string.len() % 4 != 0 { panic!("Malformed base64 string."); }
+        if string.len() % 4 != 0 { panic!("Malformed base64 string ({}).", string.len()); }
 
         let mut result = ByteVec::new();
 

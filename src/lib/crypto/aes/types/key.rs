@@ -1,9 +1,12 @@
 use crate::lib::types::{Byte, ByteVec};
+use crate::lib::traits::ToString;
 use crate::lib::crypto::aes::traits::KeyExpansion;
 
 use crate::lib::crypto::aes::consts::{RCON, SBOX};
 
 use crate::lib::math::byte::xor;
+
+use std::fmt;
 
 pub struct Key
 {
@@ -18,7 +21,7 @@ impl Key
     {
         let rounds = match key.len() 
         {
-            16 => 10,   // 16*8 = 128
+            16 => 10,  // 16*8 = 128
             24 => 12,  // 24*8 = 192
             32 => 14,  // 32*8 = 256
             _ => panic!("Malformed key")
@@ -79,6 +82,18 @@ impl KeyExpansion for Key
         }
 
         return rounds_key;
+    }
+}
+
+impl fmt::Display for Key
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error>
+    {
+        match self.key.to_string()
+        {
+            Ok(s) => writeln!(f, "{}", s),
+            Err(e) => Err(fmt::Error)
+        }
     }
 }
 

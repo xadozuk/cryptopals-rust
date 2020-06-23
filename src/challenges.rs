@@ -6,6 +6,7 @@ use std::io::{self, BufRead};
 
 use lib::types::ByteVec;
 use lib::traits::{FromHex, ToString, FromBase64, ToHex};
+use lib::crypto::aes::{Aes128, Key};
 
 pub fn challenge3()
 {
@@ -81,5 +82,30 @@ pub fn challenge6()
         "=== Guess ===\nKey: 0x{}\nPlain text:{}",
         result.0.to_hex(),
         result.1.to_string().unwrap_or(String::from("..."))
+    );
+}
+
+pub fn challenge7()
+{
+    const FILE_PATH: &str = "./data/7.txt";
+
+    let content = fs::read_to_string(FILE_PATH).unwrap();
+    let ciphertext = ByteVec::from_base64(&content);
+
+    // TODO: simplify public AES api (when cipher/uncipher) file or multiblocks
+    let key = Key::new(&ByteVec::from("YELLOW SUBMARINE"));
+    let aes = Aes128::new();
+
+    let mut plaintext = ByteVec::new();
+
+    for i in (0..ciphertext.len()).step_by(16)
+    {
+        plaintext.extend(aes.uncipher(&ciphertext[i..i+16], &key));
+    }
+
+    println!(
+        "=== Decrypt ===\nKey: {}\nPlain text:\n{}", 
+        key, 
+        plaintext.to_string().unwrap_or(String::from("NON UTF-8"))
     );
 }

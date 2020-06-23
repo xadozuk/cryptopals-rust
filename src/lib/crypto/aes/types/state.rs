@@ -1,7 +1,9 @@
 use crate::lib::types::{Byte, ByteVec, Matrix};
-use crate::lib::crypto::aes::traits::Transforms;
-use crate::lib::crypto::aes::consts::SBOX;
+use crate::lib::crypto::aes::traits::Ops;
+use crate::lib::crypto::aes::consts::{SBOX, SBOX_INV};
 use crate::lib::math::gf2_8::mul;
+
+use std::fmt;
 
 pub struct State
 {
@@ -66,13 +68,20 @@ impl State
 
     fn shift_row(&mut self, row: usize, shift: usize)
     {
-        self.bytes[row] = (0..self.block_size())
+        self.bytes[row] = (0..Self::ROW_COUNT)
             .map( |i| self.bytes[row][(shift + i) % self.block_size()])
+            .collect();
+    }
+
+    fn inv_shift_row(&mut self, row: usize, shift: usize)
+    {
+        self.bytes[row] = (0..Self::ROW_COUNT)
+            .map( |i| self.bytes[row][(self.block_size() - shift + i) % self.block_size()])
             .collect();
     }
 }
 
-impl Transforms for State
+impl Ops for State
 {
     fn add_round_key(&mut self, round_key: &[Byte])
     {
@@ -118,14 +127,52 @@ impl Transforms for State
             self.bytes[3][c] = mul(0x3, state[0][c]) ^ state[1][c] ^ state[2][c] ^ mul(0x2, state[3][c]);
         }
     }
+
+    fn inv_sub_bytes(&mut self)
+    {
+        for r in 0..Self::ROW_COUNT
+        {
+            for c in 0..self.block_size()
+            {
+                self.bytes[r][c] = SBOX_INV[self.bytes[r][c] as usize];
+            }
+        }
+    }
+
+    fn inv_shift_rows(&mut self)
+    {
+        for i in 1..Self::ROW_COUNT
+        {
+            self.inv_shift_row(i, i);
+        }
+    }
+
+    fn inv_mix_columns(&mut self)
+    {
+        let state = self.bytes.clone();
+
+        for c in 0..self.block_size()
+        {
+            self.bytes[0][c] = mul(0xe, state[0][c]) ^ mul(0xb, state[1][c]) ^ mul(0xd, state[2][c]) ^ mul(0x9, state[3][c]);
+            self.bytes[1][c] = mul(0x9, state[0][c]) ^ mul(0xe, state[1][c]) ^ mul(0xb, state[2][c]) ^ mul(0xd, state[3][c]);
+            self.bytes[2][c] = mul(0xd, state[0][c]) ^ mul(0x9, state[1][c]) ^ mul(0xe, state[2][c]) ^ mul(0xb, state[3][c]);
+            self.bytes[3][c] = mul(0xb, state[0][c]) ^ mul(0xd, state[1][c]) ^ mul(0x9, state[2][c]) ^ mul(0xe, state[3][c]);
+        }
+    }
+}
+
+impl fmt::Debug for State
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error>
+    { 
+        writeln!(f, "{:?}", self.bytes)
+    }
 }
 
 #[cfg(test)]
 mod tests
 {
-    use super::State;
-    use crate::lib::types::Matrix;
-    use crate::lib::types::Byte;
+    use super::*;
 
     #[test]
     fn from()
@@ -171,6 +218,32 @@ mod tests
                 0xC, 0xD, 0xE, 0xF
             ],
             s.output()
+        );
+    }
+
+    // TODO: test transforms
+    #[test]
+    fn inv_shift_rows()
+    {
+        let mut s = State {
+            bytes: Matrix::<Byte>::from(&vec![
+                vec![0x0, 0x1, 0x2, 0x3],
+                vec![0x4, 0x5, 0x6, 0x7],
+                vec![0x8, 0x9, 0xA, 0xB],
+                vec![0xC, 0xD, 0xE, 0xF],
+            ])
+        };
+
+        s.inv_shift_rows();
+
+        assert_eq!(
+            Matrix::<Byte>::from(&vec![
+                vec![0x0, 0x1, 0x2, 0x3],
+                vec![0x7, 0x4, 0x5, 0x6],
+                vec![0xA, 0xB, 0x8, 0x9],
+                vec![0xD, 0xE, 0xF, 0xC]
+            ]),
+            s.bytes
         );
     }
 }
