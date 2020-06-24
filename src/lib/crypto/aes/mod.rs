@@ -6,6 +6,7 @@ pub use types::Key;
 mod types;
 
 use crate::lib::types::{Byte, ByteVec};
+use crate::lib::traits::BlockIterable;
 
 use types::{State};
 use traits::{Ops, KeyExpansion};
@@ -33,9 +34,12 @@ impl Aes128
         let mut state = State::from(self.block_size, input);
         let kr_size = 4 * self.block_size;
 
-        let round_keys = key.expand();
+        let round_keys: Vec<ByteVec> = key.expand()
+            // Break expanded key into 16 bytes blocks
+            .blocks(4 * self.block_size)
+            .collect();
 
-        state.add_round_key(&round_keys[0..kr_size]);
+        state.add_round_key(&round_keys[0]);
 
         for r in 1..self.nb_rounds
         {
@@ -43,12 +47,12 @@ impl Aes128
             state.shift_rows();
             state.mix_columns();
 
-            state.add_round_key(&round_keys[r*kr_size..(r+1)*kr_size]);
+            state.add_round_key(&round_keys[r]);
         }
 
         state.sub_bytes();
         state.shift_rows();
-        state.add_round_key(&round_keys[self.nb_rounds*kr_size..(self.nb_rounds+1)*kr_size]);
+        state.add_round_key(&round_keys[self.nb_rounds]);
 
         state.output()
     }
@@ -56,23 +60,25 @@ impl Aes128
     pub fn uncipher(&self, input: &[Byte], key: &Key) -> ByteVec
     {
         let mut state = State::from(self.block_size, input);
-        let kr_size = 4 * self.block_size;
 
-        let round_keys = key.expand();
+        let round_keys: Vec<ByteVec> = key.expand()
+            // Break expanded key into 16 bytes blocks
+            .blocks(4 * self.block_size)
+            .collect();
 
-        state.add_round_key(&round_keys[self.nb_rounds*kr_size..(self.nb_rounds+1)*kr_size]);
+        state.add_round_key(&round_keys[self.nb_rounds]);
 
         for r in (1..self.nb_rounds).rev()
         {
             state.inv_shift_rows();
             state.inv_sub_bytes();
-            state.add_round_key(&round_keys[r*kr_size..(r+1)*kr_size]);
+            state.add_round_key(&round_keys[r]);
             state.inv_mix_columns();
         }
 
         state.inv_shift_rows();
         state.inv_sub_bytes();
-        state.add_round_key(&round_keys[0..kr_size]);
+        state.add_round_key(&round_keys[0]);
 
         state.output()
     }
@@ -133,7 +139,9 @@ mod tests
             let plaintext = ByteVec::from_hex("00112233445566778899aabbccddeeff");
             let key = Key::new(&ByteVec::from_hex("000102030405060708090a0b0c0d0e0f"));
 
-            let round_keys = key.expand();
+            let round_keys: Vec<ByteVec> = key.expand()
+                .blocks(4 * aes.block_size)
+                .collect();
 
             let expected = vec![
                 (
@@ -203,15 +211,14 @@ mod tests
 
 
             let mut state = State::from(aes.block_size, &plaintext);
-            let kr_size = 4 * aes.block_size;
 
             assert_eq!(
                 ByteVec::from_hex("000102030405060708090a0b0c0d0e0f"),
-                round_keys[0..kr_size].to_vec(),
+                round_keys[0].to_vec(),
                 "round[0] .k_sch"
             );
 
-            state.add_round_key(&round_keys[0..kr_size]);
+            state.add_round_key(&round_keys[0]);
 
             for r in 1..aes.nb_rounds
             {
@@ -245,11 +252,11 @@ mod tests
                     "round[{}] .m_col", r
                 );
 
-                state.add_round_key(&round_keys[r*kr_size..(r+1)*kr_size]);
+                state.add_round_key(&round_keys[r]);
 
                 assert_eq!(
                     ByteVec::from_hex(expected[r-1].4),
-                    round_keys[r*kr_size..(r+1)*kr_size].to_vec(),
+                    round_keys[r].to_vec(),
                     "round[{}] .k_sch", r
                 );
             }
@@ -276,11 +283,11 @@ mod tests
                 "round[10] .s_row"
             );
 
-            state.add_round_key(&round_keys[aes.nb_rounds*kr_size..(aes.nb_rounds+1)*kr_size]);
+            state.add_round_key(&round_keys[aes.nb_rounds]);
 
             assert_eq!(
                 ByteVec::from_hex("13111d7fe3944a17f307a78b4d2b30c5"),
-                &round_keys[aes.nb_rounds*kr_size..(aes.nb_rounds+1)*kr_size],
+                round_keys[aes.nb_rounds],
                 "round[10] .k_sch"
             );
 
@@ -298,7 +305,9 @@ mod tests
             let ciphertext = ByteVec::from_hex("69c4e0d86a7b0430d8cdb78070b4c55a");
             let key = Key::new(&ByteVec::from_hex("000102030405060708090a0b0c0d0e0f"));
 
-            let round_keys = key.expand();
+            let round_keys: Vec<ByteVec> = key.expand()
+                .blocks(4 * aes.block_size)
+                .collect();
 
             let mut expected = vec![
                 (
@@ -369,15 +378,14 @@ mod tests
             expected.reverse();
 
             let mut state = State::from(aes.block_size, &ciphertext);
-            let kr_size = 4 * aes.block_size;
 
             assert_eq!(
                 ByteVec::from_hex("13111d7fe3944a17f307a78b4d2b30c5"),
-                round_keys[aes.nb_rounds*kr_size..(aes.nb_rounds+1)*kr_size].to_vec(),
+                round_keys[aes.nb_rounds].to_vec(),
                 "round[0] .ik_sch"
             );
 
-            state.add_round_key(&round_keys[aes.nb_rounds*kr_size..(aes.nb_rounds+1)*kr_size]);
+            state.add_round_key(&round_keys[aes.nb_rounds]);
 
             for r in (1..aes.nb_rounds).rev()
             {
@@ -405,11 +413,11 @@ mod tests
                 
                 assert_eq!(
                     ByteVec::from_hex(expected[r-1].3),
-                    round_keys[r*kr_size..(r+1)*kr_size].to_vec(),
+                    round_keys[r].to_vec(),
                     "round[{}] .ik_sch", aes.nb_rounds - r
                 );
 
-                state.add_round_key(&round_keys[r*kr_size..(r+1)*kr_size]);
+                state.add_round_key(&round_keys[r]);
 
                 assert_eq!(
                     ByteVec::from_hex(expected[r-1].4),
@@ -444,11 +452,11 @@ mod tests
 
             assert_eq!(
                 ByteVec::from_hex("000102030405060708090a0b0c0d0e0f"),
-                &round_keys[0..kr_size],
+                round_keys[0],
                 "round[10] .ik_sch"
             );
 
-            state.add_round_key(&round_keys[0..kr_size]);
+            state.add_round_key(&round_keys[0]);
 
             assert_eq!(
                 ByteVec::from_hex("00112233445566778899aabbccddeeff"),
