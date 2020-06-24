@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::{self, BufRead};
 
 use lib::types::ByteVec;
-use lib::traits::{FromHex, ToString, FromBase64, ToHex};
+use lib::traits::{FromHex, ToString, FromBase64, ToHex, BlockIterable};
 use lib::crypto::aes::{Aes128, Key};
 
 pub fn challenge3()
@@ -98,9 +98,9 @@ pub fn challenge7()
 
     let mut plaintext = ByteVec::new();
 
-    for i in (0..ciphertext.len()).step_by(16)
+    for block in ciphertext.blocks(16)
     {
-        plaintext.extend(aes.uncipher(&ciphertext[i..i+16], &key));
+        plaintext.extend(aes.uncipher(&block, &key));
     }
 
     println!(

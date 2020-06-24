@@ -1,5 +1,7 @@
 use std::string::FromUtf8Error;
 
+use crate::lib::iterators::BlockIterator;
+
 pub trait Bitable
 {
     fn bit(&self, n: usize) -> u8;
@@ -29,4 +31,10 @@ pub trait ToBase64
 pub trait ToString
 {
     fn to_string(&self) -> Result<String, FromUtf8Error>;
+}
+
+pub trait BlockIterable<T>
+    where T: Clone
+{
+    fn blocks(&self, block_size: usize) -> BlockIterator<T>;
 }

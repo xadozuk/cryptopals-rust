@@ -1,5 +1,7 @@
 pub mod base64;
 
+mod iterators;
+
 use std::string::FromUtf8Error;
 use crate::lib::traits::{FromHex, Bitable, ToString, ToHex};
 
