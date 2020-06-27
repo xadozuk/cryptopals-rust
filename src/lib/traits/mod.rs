@@ -33,8 +33,7 @@ pub trait ToString
     fn to_string(&self) -> Result<String, FromUtf8Error>;
 }
 
-pub trait BlockIterable<T>
-    where T: Clone
+pub trait BlockIterable
 {
-    fn blocks(&self, block_size: usize) -> BlockIterator<T>;
+    fn blocks(&self, block_size: usize) -> BlockIterator;
 }

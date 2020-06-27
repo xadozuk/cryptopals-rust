@@ -1,31 +1,40 @@
+use crate::lib::types::{Byte, ByteVec};
+
 use std::iter;
 use std::cmp;
 
-pub struct BlockIterator<T>
-    where T: Clone
+pub struct BlockIterator
 {
-    values:     Vec<T>,
+    values:     ByteVec,
     block_size: usize,
-    index:      usize
+    index:      usize,
+    padding:    bool
 }
 
-impl<T> BlockIterator<T>
-    where T: Clone
+impl BlockIterator
 {
-    pub fn new(values: &[T], block_size: usize) -> Self
+    pub fn new(values: &[Byte], block_size: usize) -> Self
     {
         BlockIterator {
             values:     values.to_vec(),
             block_size: block_size,
-            index:      0
+            index:      0,
+            padding:    false
         }
+    }
+
+    pub fn with_padding(mut self) -> Self
+    {
+        if self.block_size > 32 { panic!("PCKS#7 not suppoert with blocks greater than 32 bytes"); }
+
+        self.padding = true;
+        self
     }
 }
 
-impl<T> iter::Iterator for BlockIterator<T>
-    where T: Clone
+impl iter::Iterator for BlockIterator
 {
-    type Item = Vec<T>;
+    type Item = ByteVec;
 
     fn next(&mut self) -> Option<Self::Item>
     { 
@@ -39,7 +48,16 @@ impl<T> iter::Iterator for BlockIterator<T>
 
         self.index = end;
 
-        Some(self.values[start..end].to_vec())
+        let mut values = self.values[start..end].to_vec();
+
+        if self.padding
+        {
+            let padding_size = self.block_size - (end - start);
+            let padding = vec![padding_size as u8; padding_size];
+            values.extend(padding);
+        }
+
+        Some(values)
     }
 }
 
@@ -71,6 +89,29 @@ mod tests
 
         assert_eq!(
             Some(vec![0x0]),
+            iter.next()
+        );
+
+        assert_eq!(None, iter.next());
+    }
+
+    #[test]
+    fn with_padding()
+    {
+        let bytes = vec![
+            0x0, 0x1, 0x2, 0x3,
+            0x4
+        ];
+
+        let mut iter = BlockIterator::new(&bytes, 4).with_padding();
+
+        assert_eq!(
+            Some(vec![0x0, 0x1, 0x2, 0x3]),
+            iter.next()
+        );
+
+        assert_eq!(
+            Some(vec![0x4, 0x3, 0x3, 0x3]),
             iter.next()
         );
 
