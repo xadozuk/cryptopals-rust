@@ -109,3 +109,23 @@ pub fn challenge7()
         plaintext.to_string().unwrap_or(String::from("NON UTF-8"))
     );
 }
+
+pub fn challenge8()
+{
+    const FILE_PATH: &str = "./data/8.txt";
+
+    let file = File::open(FILE_PATH).unwrap();
+    let ciphertexts: Vec<ByteVec> = io::BufReader::new(file).lines().map( |l| ByteVec::from_hex(&l.unwrap()) ).collect();
+
+    let results = attacks::aes::detect_ecb(ciphertexts, 16);
+
+    println!("=== ECB Detection ===");
+
+    for r in results.iter().take(5)
+    {
+        let s = r.1.to_hex();
+        println!(
+            "Line #{} = {} ({}...)", r.0, r.2, &s[..16]
+        );
+    }
+}
