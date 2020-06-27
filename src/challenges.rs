@@ -6,7 +6,7 @@ use std::io::{self, BufRead};
 
 use lib::types::ByteVec;
 use lib::traits::{FromHex, ToString, FromBase64, ToHex, BlockIterable};
-use lib::crypto::aes::{Aes128, Key};
+use lib::crypto::aes;
 
 pub fn challenge3()
 {
@@ -93,14 +93,14 @@ pub fn challenge7()
     let ciphertext = ByteVec::from_base64(&content);
 
     // TODO: simplify public AES api (when cipher/uncipher) file or multiblocks
-    let key = Key::new(&ByteVec::from("YELLOW SUBMARINE"));
-    let aes = Aes128::new();
+    let key = aes::Key::new(&ByteVec::from("YELLOW SUBMARINE"));
+    let ctx = aes::Context::new(aes::AesType::Aes128);
 
     let mut plaintext = ByteVec::new();
 
     for block in ciphertext.blocks(16)
     {
-        plaintext.extend(aes.uncipher(&block, &key));
+        plaintext.extend(aes::cipher::encrypt(&ctx, &block, &key));
     }
 
     println!(
@@ -128,4 +128,21 @@ pub fn challenge8()
             "Line #{} = {} ({}...)", r.0, r.2, &s[..16]
         );
     }
+}
+
+pub fn challenge10()
+{
+    println!("=== [ CHALLENGE 10 ] ===");
+
+    const FILE_PATH: &str = "./data/10.txt";
+
+    let content = fs::read_to_string(FILE_PATH).unwrap();
+    let ciphertext = ByteVec::from_base64(&content);
+
+    let msg = aes::Message::from(ciphertext, aes::Key::new(&ByteVec::from("YELLOW SUBMARINE")))
+        .with_iv(vec![0x0; 16]);
+
+    let plaintext = aes::decrypt(aes::AesMode::CBC, &msg);
+
+    println!("Decrypted message :\n{}", plaintext.to_string().unwrap_or(String::from("Non UTF8")));
 }

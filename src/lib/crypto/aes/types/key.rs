@@ -10,9 +10,9 @@ use std::fmt;
 
 pub struct Key
 {
-    key: ByteVec,
+    key:        ByteVec,
     block_size: usize,
-    rounds: usize
+    rounds:     usize
 }
 
 impl Key

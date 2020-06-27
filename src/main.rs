@@ -11,6 +11,7 @@ fn main()
     //challenges::challenge4();
     //challenges::challenge6();
     // challenges::challenge7();
-    challenges::challenge8();
+    // challenges::challenge8();
+    challenges::challenge10();
 }
 
