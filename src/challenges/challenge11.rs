@@ -53,5 +53,5 @@ pub fn challenge11()
 
     let total_score: f64 = results.iter().map( |n| *n as f64 ).sum::<f64>() / ROUNDS as f64;
 
-    println!("Detection score : {}%", total_score * 100.0)    ;
+    println!("Detection score : {}%", total_score * 100.0);
 }

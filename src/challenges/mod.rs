@@ -1,6 +1,8 @@
 mod challenge11;
+mod challenge12;
 
 pub use challenge11::challenge11;
+pub use challenge12::challenge12;
 
 use crate::attacks;
 use crate::lib;

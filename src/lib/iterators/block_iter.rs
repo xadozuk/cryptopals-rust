@@ -25,7 +25,7 @@ impl BlockIterator
 
     pub fn with_padding(mut self) -> Self
     {
-        if self.block_size > 32 { panic!("PCKS#7 not suppoert with blocks greater than 32 bytes"); }
+        if self.block_size > 32 { panic!("PCKS#7 does not support with blocks greater than 32 bytes"); }
 
         self.padding = true;
         self
