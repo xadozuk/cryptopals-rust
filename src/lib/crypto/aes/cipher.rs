@@ -75,7 +75,7 @@ mod tests
     fn cipher()
     {
         let ctx = ctx();
-        let key = Key::new(&ByteVec::from("YELLOW SUBMARINE"));
+        let key = Key::from("YELLOW SUBMARINE");
 
         let ciphertext = encrypt(&ctx, &ByteVec::from("Lorem ipsum dolo"), &key);
 

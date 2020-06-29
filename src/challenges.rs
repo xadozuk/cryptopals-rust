@@ -92,20 +92,14 @@ pub fn challenge7()
     let content = fs::read_to_string(FILE_PATH).unwrap();
     let ciphertext = ByteVec::from_base64(&content);
 
-    // TODO: simplify public AES api (when cipher/uncipher) file or multiblocks
-    let key = aes::Key::new(&ByteVec::from("YELLOW SUBMARINE"));
-    let ctx = aes::Context::new(aes::AesType::Aes128);
+    let key = aes::Key::from("YELLOW SUBMARINE");
+    let msg = aes::Message::from(ciphertext, key);
 
-    let mut plaintext = ByteVec::new();
-
-    for block in ciphertext.blocks(16)
-    {
-        plaintext.extend(aes::cipher::encrypt(&ctx, &block, &key));
-    }
+    let plaintext = aes::decrypt(aes::AesMode::ECB, &msg);
 
     println!(
         "=== Decrypt ===\nKey: {}\nPlain text:\n{}", 
-        key, 
+        msg.key, 
         plaintext.to_string().unwrap_or(String::from("NON UTF-8"))
     );
 }
@@ -139,7 +133,7 @@ pub fn challenge10()
     let content = fs::read_to_string(FILE_PATH).unwrap();
     let ciphertext = ByteVec::from_base64(&content);
 
-    let msg = aes::Message::from(ciphertext, aes::Key::new(&ByteVec::from("YELLOW SUBMARINE")))
+    let msg = aes::Message::from(ciphertext, aes::Key::from("YELLOW SUBMARINE"))
         .with_iv(vec![0x0; 16]);
 
     let plaintext = aes::decrypt(aes::AesMode::CBC, &msg);

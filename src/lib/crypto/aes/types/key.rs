@@ -85,6 +85,14 @@ impl KeyExpansion for Key
     }
 }
 
+impl From<&str> for Key
+{
+    fn from(s: &str) -> Self
+    {
+        Self::new(&ByteVec::from(s))
+    }
+}
+
 impl fmt::Display for Key
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error>
