@@ -37,3 +37,8 @@ pub trait BlockIterable
 {
     fn blocks(&self, block_size: usize) -> BlockIterator;
 }
+
+pub trait Random
+{
+    fn random(size: usize) -> Self;
+}

@@ -1,3 +1,7 @@
+mod challenge11;
+
+pub use challenge11::challenge11;
+
 use crate::attacks;
 use crate::lib;
 use std::fs;
@@ -5,7 +9,7 @@ use std::fs::File;
 use std::io::{self, BufRead};
 
 use lib::types::ByteVec;
-use lib::traits::{FromHex, ToString, FromBase64, ToHex, BlockIterable};
+use lib::traits::{FromHex, ToString, FromBase64, ToHex};
 use lib::crypto::aes;
 
 pub fn challenge3()
@@ -111,7 +115,15 @@ pub fn challenge8()
     let file = File::open(FILE_PATH).unwrap();
     let ciphertexts: Vec<ByteVec> = io::BufReader::new(file).lines().map( |l| ByteVec::from_hex(&l.unwrap()) ).collect();
 
-    let results = attacks::aes::detect_ecb(ciphertexts, 16);
+    let mut results = vec![];
+
+    for (i, cipher) in ciphertexts.iter().enumerate()
+    {
+        let score = attacks::aes::detect_ecb(&cipher, 16);
+        results.push((i, cipher.to_vec(), score));
+    }
+
+    results.sort_by( |a,b| b.2.partial_cmp(&a.2).unwrap() );
 
     println!("=== ECB Detection ===");
 

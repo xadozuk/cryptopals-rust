@@ -3,7 +3,9 @@ pub mod base64;
 mod iterators;
 
 use std::string::FromUtf8Error;
-use crate::lib::traits::{FromHex, Bitable, ToString, ToHex};
+use crate::lib::traits::{FromHex, Bitable, ToString, ToHex, Random};
+
+use rand::Rng;
 
 pub type ByteVec = Vec<u8>;
 
@@ -26,6 +28,18 @@ impl Bitable for ByteVec
         }
 
         return bits;
+    }
+}
+
+impl Random for ByteVec
+{
+    fn random(size: usize) -> Self
+    { 
+        let mut rng = rand::thread_rng();
+
+        (0..size)
+            .map( |_| rng.gen::<u8>() )
+            .collect()
     }
 }
 
