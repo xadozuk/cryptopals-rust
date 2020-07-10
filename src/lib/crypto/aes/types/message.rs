@@ -16,7 +16,6 @@ impl Message
             content: content,
             key:     key,
             iv:      None
-
         }
     }
 

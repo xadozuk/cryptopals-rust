@@ -5,3 +5,4 @@ pub mod types;
 pub mod traits;
 pub mod math;
 pub mod iterators;
+pub mod util;

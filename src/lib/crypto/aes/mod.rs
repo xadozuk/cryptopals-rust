@@ -76,7 +76,7 @@ fn decrypt_ecb(ctx: &Context, message: &Message) -> ByteVec
         result.extend(cipher::decrypt(ctx, &block, &message.key));
     }
 
-    result
+    result.blocks(ctx.block_size * 4).remove_padding()
 }
 
 fn decrypt_cbc(ctx: &Context, message: &Message) -> ByteVec
@@ -94,7 +94,7 @@ fn decrypt_cbc(ctx: &Context, message: &Message) -> ByteVec
         result.extend(plain);
     }
 
-    result
+    result.blocks(ctx.block_size * 4).remove_padding()
 }
 
 #[cfg(test)]
@@ -104,7 +104,41 @@ mod tests
     use crate::lib::traits::FromHex;
 
     #[test]
-    fn cipher_cbc()
+    fn encrypt_ebc()
+    {
+        let ctx = Context::new(AesType::Aes128);
+        let msg = Message::from(
+                            ByteVec::from_hex("00112233445566778899AABBCCDDEEFF"),
+                            Key::new(&ByteVec::from_hex("000102030405060708090A0B0C0D0E0F"))
+                        );
+
+        let expected = ByteVec::from_hex("69c4e0d86a7b0430d8cdb78070b4c55a954f64f2e4e86e9eee82d20216684899");
+
+        assert_eq!(
+            expected,
+            super::encrypt_ecb(&ctx, &msg)
+        );
+    }
+
+    #[test]
+    fn decrypt_ebc()
+    {
+        let ctx = Context::new(AesType::Aes128);
+        let msg = Message::from(
+                            ByteVec::from_hex("69c4e0d86a7b0430d8cdb78070b4c55a954f64f2e4e86e9eee82d20216684899"),
+                            Key::new(&ByteVec::from_hex("000102030405060708090A0B0C0D0E0F"))
+                        );
+
+        let expected = ByteVec::from_hex("00112233445566778899AABBCCDDEEFF");
+
+        assert_eq!(
+            expected,
+            super::decrypt_ecb(&ctx, &msg)
+        );
+    }
+
+    #[test]
+    fn encrypt_cbc()
     {
         let ctx = Context::new(AesType::Aes128);
         let msg = Message::from(
@@ -113,11 +147,29 @@ mod tests
                         )
                         .with_iv(vec![0x0; 16]);
 
-        let expected = ByteVec::from_hex("69c4e0d86a7b0430d8cdb78070b4c55a");
+        let expected = ByteVec::from_hex("69c4e0d86a7b0430d8cdb78070b4c55a9e978e6d16b086570ef794ef97984232");
 
         assert_eq!(
             expected,
             super::encrypt_cbc(&ctx, &msg)
+        );
+    }
+
+    #[test]
+    fn decrypt_cbc()
+    {
+        let ctx = Context::new(AesType::Aes128);
+        let msg = Message::from(
+                            ByteVec::from_hex("69c4e0d86a7b0430d8cdb78070b4c55a9e978e6d16b086570ef794ef97984232"),
+                            Key::new(&ByteVec::from_hex("000102030405060708090A0B0C0D0E0F"))
+                        )
+                        .with_iv(vec![0x0; 16]);
+
+        let expected = ByteVec::from_hex("00112233445566778899AABBCCDDEEFF");
+
+        assert_eq!(
+            expected,
+            super::decrypt_cbc(&ctx, &msg)
         );
     }
 }

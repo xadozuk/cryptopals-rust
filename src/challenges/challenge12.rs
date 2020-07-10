@@ -4,8 +4,7 @@ use crate::lib::crypto::aes;
 use crate::attacks;
 
 use std::collections::HashMap;
-use std::time::{Duration, Instant};
-use rand::Rng;
+use std::time::Instant;
 
 const UNKNOWN_STRING: &str = 
 "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg

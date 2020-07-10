@@ -1,8 +1,10 @@
 mod challenge11;
 mod challenge12;
+mod challenge13;
 
 pub use challenge11::challenge11;
 pub use challenge12::challenge12;
+pub use challenge13::challenge13;
 
 use crate::attacks;
 use crate::lib;

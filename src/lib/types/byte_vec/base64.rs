@@ -1,5 +1,5 @@
 use super::ByteVec;
-use crate::lib::traits::{FromBase64, ToBase64, ToString};
+use crate::lib::traits::{FromBase64, ToBase64};
 
 const BASE64_DECODING_TABLE: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static BASE64_ENCODING_TABLE: &[u8] = BASE64_DECODING_TABLE.as_bytes();
@@ -131,6 +131,7 @@ fn chars_to_sextets(string: &str) -> Vec<u8>
 mod tests
 {
     use super::*;
+    use crate::lib::traits::ToString;
 
     #[test]
     fn to_base64()
