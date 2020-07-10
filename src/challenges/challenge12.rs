@@ -55,7 +55,7 @@ fn detect_block_size() -> usize
 
         let current_size = encryption_oracle(&vec![0x0; n], &tmp_key).len();
 
-        // If adding a byte change output size, we have found a block boundary
+        // If adding a byte changes output size, we have found a block boundary
         if current_size > output_size
         {   
             debugln!("Found a block boundary when adding {} bytes", n);
@@ -82,7 +82,7 @@ fn build_dictionnary(n_block: usize, block_size: usize, input: &ByteVec, key: &[
     for b in 0x00..=0xFF
     {
         let crafted = [&input[..], &[b]].concat();
-        let cipher = encryption_oracle(&crafted, &key).blocks(block_size).nth(n_block).unwrap();
+        let cipher  = encryption_oracle(&crafted, &key).blocks(block_size).nth(n_block).unwrap();
 
         debugln!("oracle(input || 0x{:0>2x})[{}] = {}...", b, n_block, cipher.to_hex());
 
